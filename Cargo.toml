@@ -10,3 +10,8 @@ description = "QEMU guest agent in Rust for LevitateOS and AcornOS"
 [[bin]]
 name = "recguest"
 path = "src/main.rs"
+
+[dependencies]
+libc = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
