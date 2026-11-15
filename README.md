@@ -2,7 +2,18 @@
 
 A QEMU guest agent in Rust for LevitateOS and AcornOS, intended to replace the upstream `qemu-guest-agent` inside guests.
 
-Status: **scaffolding only** — the repository, crate, and workspace wiring exist; the agent protocol is not implemented yet.
+Status: protocol implemented (the five commands below); not yet shipped in the distro images.
+
+## Check
+
+Host-side protocol check (no VM needed; drives the binary over a PTY):
+
+```sh
+cargo build -p recguest
+cargo run -p recguest --example protocol_check -- ./target/debug/recguest
+```
+
+It asserts ping/sync/sync-delimited (raw `0xFF` sentinel)/info replies, that unknown commands and malformed JSON are refused without killing the loop, and that dry-run shutdown answers before “powering off”.
 
 Design bounds, from the runtime-port research (`docs/rec-runtime-ports.md` in the LevitateOS repo):
 
