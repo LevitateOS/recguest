@@ -1,8 +1,24 @@
 # recguest
 
-A QEMU guest agent in Rust for LevitateOS and AcornOS, intended to replace the upstream `qemu-guest-agent` inside guests.
+A QEMU guest agent in Rust for LevitateOS and AcornOS, in place of the upstream
+`qemu-guest-agent`.
 
-Status: protocol implemented (the five commands below); not yet shipped in the distro images.
+## What it does
+
+It speaks the guest-agent JSON protocol over the virtio-serial port
+`/dev/virtio-ports/org.qemu.guest_agent.0`, with an allowlist of five commands:
+`guest-ping`, `guest-sync`, `guest-sync-delimited`, `guest-info` and
+`guest-shutdown`. Anything else, and malformed JSON, is refused without ending
+the loop. There is no `guest-exec` and no filesystem freeze; those would be
+separate decisions. Outside a VM (no virtio port) it exits cleanly.
+
+## Where it runs
+
+The builder puts `recguest` in the system image (`distro/builder`,
+`LIVE_TOOLS`), and the desktop system starts it only when the machine has the
+virtio port: a systemd unit with that condition, or the `vm-guest-agents`
+OpenRC service. A base system carries the binary and starts nothing
+(`distro/builder/os-recipes/installed-system.rhai`, `desktop_services`).
 
 ## Check
 
@@ -13,13 +29,10 @@ cargo build -p recguest
 cargo run -p recguest --example protocol_check -- ./target/debug/recguest
 ```
 
-It asserts ping/sync/sync-delimited (raw `0xFF` sentinel)/info replies, that unknown commands and malformed JSON are refused without killing the loop, and that dry-run shutdown answers before “powering off”.
+It asserts the ping, sync, sync-delimited (raw `0xFF` sentinel) and info
+replies, that unknown commands and malformed JSON are refused, and that a dry-run
+shutdown answers before "powering off".
 
-Design bounds, from the runtime-port research (`docs/rec-runtime-ports.md` in the LevitateOS repo):
-
-- Speak the guest-agent JSON protocol over the virtio-serial port `/dev/virtio-ports/org.qemu.guest_agent.0`.
-- Start with an allowlist of commands: `guest-ping`, `guest-sync`, `guest-info`, `guest-shutdown`.
-- No `guest-exec` or filesystem freeze in the first version; those are separate decisions.
-- Outside a VM (no virtio port), exit cleanly.
-
-Smallest validation once implemented: boot LevitateOS and AcornOS under recqemu/libvirt and drive `guest-ping`, `guest-info`, and `guest-shutdown` from the host.
+Not yet checked: booting LevitateOS and AcornOS under recqemu and driving
+`guest-ping`, `guest-info` and `guest-shutdown` from the host. The design notes
+are in `docs/rec-runtime-ports.md` in the LevitateOS repository.
