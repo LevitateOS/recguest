@@ -1,0 +1,12 @@
+[package]
+name = "recguest"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "QEMU guest agent in Rust for LevitateOS and AcornOS"
+
+[[bin]]
+name = "recguest"
+path = "src/main.rs"
