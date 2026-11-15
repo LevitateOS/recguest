@@ -97,6 +97,41 @@ fn handle(line: &str, dry_run_shutdown: bool) -> Response {
     };
     let args = req.get("arguments").cloned().unwrap_or(serde_json::Value::Null);
     match execute {
+        "guest-ping" => plain(reply_ok(serde_json::json!({}))),
+        "guest-sync" | "guest-sync-delimited" => {
+            let Some(id) = args.get("id").and_then(|v| v.as_i64()) else {
+                return plain(reply_err(
+                    "InvalidParameter",
+                    "guest-sync needs an integer \"id\"",
+                ));
+            };
+            Response {
+                body: reply_ok(serde_json::Value::from(id)),
+                delimited: execute == "guest-sync-delimited",
+                shutdown: false,
+            }
+        }
+        "guest-info" => plain(reply_ok(serde_json::json!({
+            "version": env!("CARGO_PKG_VERSION"),
+            "supported_commands": COMMANDS.iter().map(|name| serde_json::json!({
+                "name": name, "enabled": true, "success-response": true
+            })).collect::<Vec<_>>(),
+        }))),
+        "guest-shutdown" => {
+            let mode = args.get("mode").and_then(|v| v.as_str()).unwrap_or("powerdown");
+            match mode {
+                // v1 powers off; a guest "reboot" mode is not offered.
+                "powerdown" | "halt" => Response {
+                    body: reply_ok(serde_json::json!({})),
+                    delimited: false,
+                    shutdown: !dry_run_shutdown,
+                },
+                other => plain(reply_err(
+                    "InvalidParameter",
+                    &format!("unknown shutdown mode {other:?}"),
+                )),
+            }
+        }
         other => plain(reply_err("CommandNotFound", &format!("unknown command {other:?}"))),
     }
 }
